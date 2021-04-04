@@ -3,12 +3,28 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
-public class Server extends UnicastRemoteObject implements ServerInterface {
+public class Server extends UnicastRemoteObject implements IGame {
   private static volatile String remoteHostName;
 
   private static final int REGISTRY_PORT = 52369;
 
   public Server() throws RemoteException {}
+
+  public int register() throws RemoteException {
+    return 1;
+  }
+
+  public int play(int playerId) throws RemoteException {
+    return 1;
+  }
+
+  public int giveUp(int playerId) throws RemoteException {
+    return 1;
+  }
+
+  public int stop(int playerId) throws RemoteException {
+    return 1;
+  }
 
   public static void main(String[] args) throws RemoteException {
     if (args.length != 1) {
