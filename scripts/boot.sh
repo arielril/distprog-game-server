@@ -6,3 +6,6 @@ echo 'Here is the boot guy!'
 sudo apt-get update \
   && sudo apt-get install -y \
     default-jdk
+
+# Add aliases
+echo 'alias la="ls -lah"' > ~/.bashrc
