@@ -7,10 +7,16 @@ public class GameServer {
   private static final int REGISTRY_PORT = 52369;
 
   private static void run(Game game) {
+    long start = System.currentTimeMillis();
     while(true) {
       if (game.isGameReady()) {
         System.out.println("[+] game is ready ;)");
         game.start();
+      }
+
+      if (System.currentTimeMillis() - start >= 5000) {
+        game.checkPlayers();
+        start = System.currentTimeMillis();
       }
 
       try {

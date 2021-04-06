@@ -19,6 +19,14 @@ public class PlayerServer {
       }
       player.setId(playerReg);
 
+      String endpoint = String.format(
+        "rmi://%s:%d/player_server%d", 
+        player.getServerIp(), 
+        REGISTRY_PORT,
+        player.getId()
+      );
+      Naming.rebind(endpoint, player);
+
       System.out.printf("Player registered (%d)\n", playerReg);
     } catch (Exception e) {
       System.out.println("[!] failed to run the player server" + e);
