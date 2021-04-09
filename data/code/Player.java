@@ -11,20 +11,25 @@ public class Player extends UnicastRemoteObject implements IPlayer {
 
   private int id;
   private String gameServerIp;
-  private String serverIp;
+  // format: <ip>:<port>
+  private String host;
+  private int port;
   private int numOfPlays;
+  private boolean started;
 
   public Player() throws RemoteException {
     this.numOfPlays = 50;
     this.gameServerIp = "";
-    this.serverIp = "";
+    this.host = "";
+    this.port = 0;
+    this.started = false;
   }
 
   public Player(int id) throws RemoteException {
     this.id = id;
     this.numOfPlays = 50;
     this.gameServerIp = "";
-    this.serverIp = "";
+    this.host = "";
   }
 
   public int getId() {
@@ -43,53 +48,101 @@ public class Player extends UnicastRemoteObject implements IPlayer {
     return this.gameServerIp;
   }
 
-  public String getServerIp() throws RemoteException {
-    return this.serverIp;
+  public String getHost() throws RemoteException {
+    return this.host;
   }
 
-  public void setServerIp(String serverIp) {
-    this.serverIp = serverIp;
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  public int getPort() {
+    return this.port;
+  }
+
+  public String getHostname() throws RemoteException {
+    return String.format("%s:%d", this.host, this.port);
+  }
+
+  public void setStarted(boolean started) {
+    this.started = started;
+  }
+
+  public boolean getStarted() {
+    return this.started;
+  }
+
+  public int timesToPlay() {
+    return this.numOfPlays;
+  }
+
+  public void play() {
+    if (this.numOfPlays <= 0) {
+      return;
+    }
+    
+    // https://stackoverflow.com/questions/363681/how-do-i-generate-random-integers-within-a-specific-range-in-java
+    // here we need to sleep for [250 - 950]ms (random)
+    try {
+      // Play
+      IGame game = (IGame) Naming.lookup(
+        String.format("rmi://%s:%d/game_server", this.gameServerIp, GAME_SERVER_PORT)
+      );
+
+      game.play(this.id);
+      this.numOfPlays--;
+
+      System.out.printf("[+] Player (%d) have (%d) plays left\n", this.id, this.numOfPlays);
+    } catch (NotBoundException e) {
+      System.out.printf("[!] player (%d) failed to play: %s\n", this.id, e);
+    } catch (MalformedURLException e) {
+      System.out.printf("[!] player (%d) failed to play: %s\n", this.id, e);
+    } catch (RemoteException e) {
+      System.out.printf("[!] player (%d) failed to play: %s\n", this.id, e);
+    } 
+
+    int randSleep = ThreadLocalRandom.current().nextInt(250, 951);
+    System.out.printf("[+] player (%d) is sleeping for [%d]ms\n", this.id, randSleep);
+    try {
+      Thread.sleep(randSleep);
+    } catch (InterruptedException e) {
+      System.out.printf("[!] player (%d) failed to sleep for [%d]ms\n", this.id, randSleep);
+    }
   }
     
   public void start() throws RemoteException {
     System.out.printf("[+] player (%d) started playing\n", this.id);
 
-    // https://stackoverflow.com/questions/363681/how-do-i-generate-random-integers-within-a-specific-range-in-java
-    // here we need to sleep for [250 - 950]ms (random)
-    for (int i = 1; i <= this.numOfPlays; i++) {
-      try {
-        // TODO make a way for the players to have individual URLs. add a default+random value
-
-        // Play
-        IGame game = (IGame) Naming.lookup(
-          String.format("//%s:%d/game_server", this.gameServerIp,GAME_SERVER_PORT)
-        );
-  
-        int playResult = game.play(this.id);
-        if (playResult != 1) {
-          System.out.printf("[!] player (%d) failed to play\n", this.id);
-        }
-      } catch (NotBoundException e) {
-        System.out.printf("[!] player (%d) failed to play: %s\n", this.id, e);
-      } catch (MalformedURLException e) {
-        System.out.printf("[!] player (%d) failed to play: %s\n", this.id, e);
-      }
-
-      int randSleep = ThreadLocalRandom.current().nextInt(250, 951);
-      System.out.printf("[+] player (%d) is sleeping for [%d]ms\n", this.id, randSleep);
-      try {
-        Thread.sleep(randSleep);
-      } catch (InterruptedException e) {
-        System.out.printf("[!] player (%d) failed to sleep for [%d]ms\n", this.id, randSleep);
-      }
-    }
+    this.setStarted(true);
   }
-  
+
   public void bonus() throws RemoteException {
     System.out.printf("[+] player (%d) got the bonus\n", this.id);
   }
 
   public void check() throws RemoteException {
     System.out.printf("[+] player (%d) was checked for liveness\n", this.id);
+  }
+
+  public void getResult(int result, ResultType resultType) throws RemoteException {
+    System.out.printf("[!] player (%d) played\n", this.id);
+    switch (resultType) {
+      case PLAY:
+        if (result != 1) {
+          System.out.printf("[!] player (%d) failed to play\n", this.id);
+        }
+        break;
+    
+      default:
+        break;
+    }
+  }
+
+  public void stopPlaying() {
+    System.out.printf("[+] Player (%d) is stopping\n", this.id);
   }
 }

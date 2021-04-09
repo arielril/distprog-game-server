@@ -19,6 +19,8 @@ public class GameServer {
         start = System.currentTimeMillis();
       }
 
+      game.processResults();
+
       try {
         Thread.sleep(100);
       } catch (InterruptedException e) {}
