@@ -14,6 +14,7 @@ public class GameServer {
         game.start();
       }
 
+      // for each 5s - check on players
       if (System.currentTimeMillis() - start >= 5000) {
         game.checkPlayers();
         start = System.currentTimeMillis();

@@ -11,4 +11,6 @@ public interface IGame extends Remote {
   public int giveUp(int playerId) throws RemoteException;
 
   public int stop(int playerId) throws RemoteException;
+
+  public void getResult(int playerId, int result, ResultType resultType) throws RemoteException;
 }

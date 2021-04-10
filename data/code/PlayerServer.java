@@ -52,6 +52,8 @@ public class PlayerServer {
         player.stopPlaying();
       }
 
+      player.processResults();
+
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {}
@@ -80,7 +82,9 @@ public class PlayerServer {
       player.setHost(args[0]);
       player.setPort(REGISTRY_PORT);
 
-      player.setGameServerIp(args[1]);
+      player.setGameServer(
+        String.format("rmi://%s:%d/game_server", args[1], GAME_SERVER_PORT)
+      );
 
       System.out.println("[+] player is registered");
     } catch (Exception e) {
@@ -92,9 +96,7 @@ public class PlayerServer {
 
   public static IGame getGameServer(Player player) {
     try {
-      return (IGame) Naming.lookup(
-        String.format("rmi://%s:%d/game_server", player.getGameServerIp(), GAME_SERVER_PORT)
-      );
+      return (IGame) Naming.lookup(player.getGameServer());
     } catch (Exception e) {
       System.out.println("[!] failed to get the game server naming: " + e);
       System.exit(0);

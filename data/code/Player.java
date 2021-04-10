@@ -3,6 +3,8 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Queue;
+import java.util.LinkedList;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Player extends UnicastRemoteObject implements IPlayer {
@@ -10,25 +12,27 @@ public class Player extends UnicastRemoteObject implements IPlayer {
   private final int GAME_SERVER_PORT = 52369;
 
   private int id;
-  private String gameServerIp;
+  private String gameServer;
   // format: <ip>:<port>
   private String host;
   private int port;
   private int numOfPlays;
   private boolean started;
+  private Queue<Result> resultList;
 
   public Player() throws RemoteException {
     this.numOfPlays = 50;
-    this.gameServerIp = "";
+    this.gameServer = "";
     this.host = "";
     this.port = 0;
     this.started = false;
+    this.resultList = new LinkedList<Result>();
   }
 
   public Player(int id) throws RemoteException {
     this.id = id;
     this.numOfPlays = 50;
-    this.gameServerIp = "";
+    this.gameServer = "";
     this.host = "";
   }
 
@@ -40,12 +44,12 @@ public class Player extends UnicastRemoteObject implements IPlayer {
     this.id = id;
   }
 
-  public void setGameServerIp(String ip) {
-    this.gameServerIp = ip;
+  public void setGameServer(String gameServer) {
+    this.gameServer = gameServer;
   }
 
-  public String getGameServerIp() {
-    return this.gameServerIp;
+  public String getGameServer() {
+    return this.gameServer;
   }
 
   public String getHost() throws RemoteException {
@@ -90,7 +94,7 @@ public class Player extends UnicastRemoteObject implements IPlayer {
     try {
       // Play
       IGame game = (IGame) Naming.lookup(
-        String.format("rmi://%s:%d/game_server", this.gameServerIp, GAME_SERVER_PORT)
+        String.format("rmi://%s:%d/game_server", this.gameServer, GAME_SERVER_PORT)
       );
 
       game.play(this.id);
@@ -121,28 +125,75 @@ public class Player extends UnicastRemoteObject implements IPlayer {
   }
 
   public void bonus() throws RemoteException {
-    System.out.printf("[+] player (%d) got the bonus\n", this.id);
+    System.out.printf("[+] player (%d) got a bonus\n", this.id);
   }
 
   public void check() throws RemoteException {
     System.out.printf("[+] player (%d) was checked for liveness\n", this.id);
+
+    this.resultList.add(
+      new Result(this.id, ResultType.PCHECK, 1)
+    );
   }
 
   public void getResult(int result, ResultType resultType) throws RemoteException {
-    System.out.printf("[!] player (%d) played\n", this.id);
     switch (resultType) {
       case PLAY:
-        if (result != 1) {
+        if (result > 0) {
+          System.out.printf("[!] player (%d) played\n", this.id);
+        } else {
           System.out.printf("[!] player (%d) failed to play\n", this.id);
         }
         break;
     
+      case STOP:
+        if (result > 0) {
+          System.out.printf("[+] Player (%d) is stopping\n", this.id);
+        } else {
+          System.out.printf("[!] player (%d) couldn't stop from playing\n", this.id);
+        }
+
       default:
         break;
     }
   }
 
   public void stopPlaying() {
-    System.out.printf("[+] Player (%d) is stopping\n", this.id);
+    try {
+      System.out.printf("[+] player (%d) is stopping\n", this.id);
+      IGame game = (IGame) Naming.lookup(this.getGameServer());
+      
+      game.stop(this.id);
+    } catch (NotBoundException e) {
+      System.out.printf("[!] failed to stop the player (%d) from playing: %s\n", this.id, e);
+    } catch (MalformedURLException e) {
+      System.out.printf("[!] failed to stop the player (%d) from playing: %s\n", this.id, e);
+    } catch (RemoteException e) {
+      System.out.printf("[!] failed to stop the player (%d) from playing: %s\n", this.id, e);
+    }
+  }
+
+  public void processResults() {
+    int resultListLen = this.resultList.size();
+
+    if (resultListLen < 1) { return; }
+
+    for (int i = 0; i < resultListLen; i++) {
+      Result r = this.resultList.remove();
+
+      if (r == null) { continue; }
+
+      try {
+        IGame game = (IGame) Naming.lookup(this.getGameServer());
+
+        game.getResult(this.id, r.value, r.type);
+      } catch (NotBoundException e) {
+        System.out.printf("[!] failed to send result (%s) to the server: %s\n", r.type, e);
+      } catch (MalformedURLException e) {
+        System.out.printf("[!] failed to send result (%s) to the server: %s\n", r.type, e);
+      } catch (RemoteException e) {
+        System.out.printf("[!] failed to send result (%s) to the server: %s\n", r.type, e);
+      } 
+    }
   }
 }
