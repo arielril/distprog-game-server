@@ -54,6 +54,10 @@ public class PlayerServer {
 
       player.processResults();
 
+      if (player.shouldDie()) {
+        player.die();
+      }
+
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {}

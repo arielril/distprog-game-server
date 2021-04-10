@@ -16,22 +16,23 @@ public class Player extends UnicastRemoteObject implements IPlayer {
   // format: <ip>:<port>
   private String host;
   private int port;
-  private int numOfPlays;
+  private int numOfPlays = 15;
   private boolean started;
+  private boolean sentStop;
   private Queue<Result> resultList;
+  private boolean shouldDie = false;
 
   public Player() throws RemoteException {
-    this.numOfPlays = 50;
     this.gameServer = "";
     this.host = "";
     this.port = 0;
     this.started = false;
     this.resultList = new LinkedList<Result>();
+    this.sentStop = false;
   }
 
   public Player(int id) throws RemoteException {
     this.id = id;
-    this.numOfPlays = 50;
     this.gameServer = "";
     this.host = "";
   }
@@ -93,9 +94,7 @@ public class Player extends UnicastRemoteObject implements IPlayer {
     // here we need to sleep for [250 - 950]ms (random)
     try {
       // Play
-      IGame game = (IGame) Naming.lookup(
-        String.format("rmi://%s:%d/game_server", this.gameServer, GAME_SERVER_PORT)
-      );
+      IGame game = (IGame) Naming.lookup(this.getGameServer());
 
       game.play(this.id);
       this.numOfPlays--;
@@ -136,6 +135,17 @@ public class Player extends UnicastRemoteObject implements IPlayer {
     );
   }
 
+  public boolean shouldDie() {
+    return this.shouldDie;
+  }
+
+  public void die() {
+    try {
+      Thread.sleep(250);
+      System.exit(0);
+    } catch (InterruptedException e) {}
+  }
+
   public void getResult(int result, ResultType resultType) throws RemoteException {
     switch (resultType) {
       case PLAY:
@@ -148,9 +158,15 @@ public class Player extends UnicastRemoteObject implements IPlayer {
     
       case STOP:
         if (result > 0) {
-          System.out.printf("[+] Player (%d) is stopping\n", this.id);
+          System.out.printf("[+] Player (%d) stopped. Bye!\n", this.id);
+          this.shouldDie = true;
         } else {
           System.out.printf("[!] player (%d) couldn't stop from playing\n", this.id);
+        }
+
+      case BONUS:
+        if (result == 1) {
+          this.bonus();
         }
 
       default:
@@ -159,11 +175,15 @@ public class Player extends UnicastRemoteObject implements IPlayer {
   }
 
   public void stopPlaying() {
+    // avoid sending multiple stops to the server
+    if (this.sentStop) { return; }
+
     try {
       System.out.printf("[+] player (%d) is stopping\n", this.id);
       IGame game = (IGame) Naming.lookup(this.getGameServer());
       
       game.stop(this.id);
+      this.sentStop = true;
     } catch (NotBoundException e) {
       System.out.printf("[!] failed to stop the player (%d) from playing: %s\n", this.id, e);
     } catch (MalformedURLException e) {

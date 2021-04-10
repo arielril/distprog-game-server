@@ -1,4 +1,5 @@
 import java.net.MalformedURLException;
+import java.rmi.ConnectException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -37,6 +38,13 @@ public class Game extends UnicastRemoteObject implements IGame {
     return this.playerList.size() == this.numOfPlayers;
   }
 
+  public boolean runningWithNoPlayers() {
+    return (
+      this.isRunning 
+      && this.playerList.size() == 0
+    );
+  }
+
   public void start() {
     this.isRunning = true;
 
@@ -58,17 +66,18 @@ public class Game extends UnicastRemoteObject implements IGame {
 
   public void checkPlayers() {
     for (Map.Entry<Integer, String> player : this.playerList.entrySet()) {
+      int playerId = player.getKey();
       try {
-        System.out.printf("[+] Checking player (%d) => [%s]\n", player.getKey(), player.getValue());
+        System.out.printf("[+] Checking player (%d) => [%s]\n", playerId, player.getValue());
         IPlayer playerServer = (IPlayer) Naming.lookup(player.getValue());
 
         playerServer.check();
       } catch (NotBoundException e) {
-        System.out.printf("[!] game server couldn't check player (%d): %s\n", player.getKey(), e);
+        System.out.printf("[!] game server couldn't check player (%d): %s\n", playerId, e);
       } catch (MalformedURLException e) {
-        System.out.printf("[!] game server couldn't check player (%d): %s\n", player.getKey(), e);
+        System.out.printf("[!] game server couldn't check player (%d): %s\n", playerId, e);
       } catch (RemoteException e) {
-        System.out.printf("[!] game server couldn't check player (%d): %s\n", player.getKey(), e);
+        System.out.printf("[!] game server couldn't check player (%d): %s\n", playerId, e);
       }
     }
   }
@@ -99,12 +108,24 @@ public class Game extends UnicastRemoteObject implements IGame {
     return playerId;
   }
 
+  private boolean sendBonus() {
+    int bonus = ThreadLocalRandom.current().nextInt(0, 100);
+
+    return bonus <= 3;
+  }
+
   public int play(int playerId) throws RemoteException {
     System.out.printf("[+] player (%d) is playing\n", playerId);
 
     this.resultList.add(
       new Result(playerId, ResultType.PLAY, 1)
     );
+
+    if (this.sendBonus()) {
+      this.resultList.add(
+        new Result(playerId, ResultType.BONUS, 1)
+      );
+    }
 
     return 1;
   }
@@ -120,7 +141,9 @@ public class Game extends UnicastRemoteObject implements IGame {
   public int stop(int playerId) throws RemoteException {
     System.out.printf("[+] player (%d) stopped playing\n", playerId);
 
-    this.playerList.remove(playerId);
+    this.resultList.add(
+      new Result(playerId, ResultType.STOP, 1)
+    );
 
     return 1;
   }
@@ -140,15 +163,19 @@ public class Game extends UnicastRemoteObject implements IGame {
   
       try {
         IPlayer player = (IPlayer) Naming.lookup(playerHostname);
-  
+        
         player.getResult(r.value, r.type);
+        if (r.type == ResultType.STOP) {
+          this.playerList.remove(r.playerId);
+        }
+        
       } catch (NotBoundException e) {
         System.out.printf("[!] failed to send result (%s) to player: %s\n", r.type, e);
       } catch (MalformedURLException e) {
         System.out.printf("[!] failed to send result (%s) to player: %s\n", r.type, e);
       } catch (RemoteException e) {
         System.out.printf("[!] failed to send result (%s) to player: %s\n", r.type, e);
-      } 
+      }
     }
   }
 

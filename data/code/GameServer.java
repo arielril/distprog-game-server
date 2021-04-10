@@ -22,6 +22,11 @@ public class GameServer {
 
       game.processResults();
 
+      if (game.runningWithNoPlayers()) {
+        System.out.println("[!] no players alive. i'm done! Bye ;)");
+        System.exit(0);
+      }
+
       try {
         Thread.sleep(100);
       } catch (InterruptedException e) {}
