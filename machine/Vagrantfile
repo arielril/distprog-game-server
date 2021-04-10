@@ -2,18 +2,18 @@
 # vi: set ft=ruby :
 
 IMAGE = "debian/buster64"
-HCOUNT = ENV['HCOUNT'] || 1
+HCOUNT = 2 # if ENV['HCOUNT'] then Integer(ENV['HCOUNT']) else 1 end
 
 Vagrant.configure("2") do |config|
 
   (1..HCOUNT).each do |host_id| 
-    config.vm.define "host#{host_id}" do |host| 
+    config.vm.define "host-#{host_id}" do |host| 
       host.vm.box = IMAGE 
       host.vm.hostname = "host#{host_id}"
       
       # ip starts at [192.168.35.10] - host 1
       host.vm.network "private_network", ip: "192.168.35.#{host_id+9}"
-      host.vm.synced_folder "../data", "/vagrant"
+      host.vm.synced_folder "../data/code", "/home/vagrant/code"
 
       host.vm.provider "virtualbox" do |vb|
         vb.gui = false
