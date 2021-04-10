@@ -71,4 +71,7 @@ Temporary Items
 ### Vagrant Patch ###
 *.box
 
+### obsidian
+.obsidian
+
 # End of https://www.toptal.com/developers/gitignore/api/java,code,macos,vagrant

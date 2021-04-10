@@ -9,7 +9,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Player extends UnicastRemoteObject implements IPlayer {
   public static final long serialVersionUID = -13553123213123L;
-  private final int GAME_SERVER_PORT = 52369;
 
   private int id;
   private String gameServer;
