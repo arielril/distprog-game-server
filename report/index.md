@@ -138,23 +138,32 @@ public class Result {
 
 ## Demonstração
 
-### Code Build
+### Compilação
+Para compilar (*build*) o código é necessário ir para a pasta `data/code`, a qual o contém o codigo Java da implementação. Após estar dentro da pasta que contém o código é necessário executar o comando `make` para compilar o código Java e gerar os arquivos `.class`.
 
+#### Comandos
 ```bash
 cd <project_root>/data/code
-make
+make # gera os arquivos .class
 ```
 
+### Máquinas Virtuais
+Para inicias as máquinas virtuais para a demonstração é necessário ter a ferramenta **vagrant**(https://www.vagrantup.com) instalada além de possuir VirtualBox instalado. Após instalar as ferramentas necessárias é preciso estar na pasta `machine`, a qual contém o arquivo `Vagrantfile` com as configurações necessárias para inciar 3 máquinas virtuais, para executar o comando `vagrant up`.
 
-### Host machines
-
-```bash
-cd <project_root>/machine
-vagrant up # irá inicializar 3 máquinas virtuais [host-{1,2,3}]
-```
-
+![[Pasted image 20210411121513.png]]
 
 ### Simulação
 
+Para executar a simulação é possível iniciar a quantidade que quiser de conexões com as máquinas virtuais, para este trabalho foi utilizado 3 máquinas virtuais e 6 conexões (duas para cada máquina virtual).
 
+![[Screen Shot 2021-04-11 at 12.30.41 PM.png]]
 
+Na máquina 1 (**host-1**) foram executados o servidor do jogo (**GameServer**) e o jogador 1. Na máquina 2 (**host-2**) foram executados os jogadores 2 e 3. Na máquina 3 (**host**) foram executados os jogadores 4 e 5. Após conectar nas máquinas virtuais é preciso modificar o diretório para `~/code`, o qual é sincronizado com o diretório `data/code` da máquina local. 
+
+Após inicializar o servidor do jogo e incializar todos os jogadores, o programa ira inicializar o jogo e todos os jogadores irão começar a executar as suas jogadas.
+
+![[Pasted image 20210411125634.png]]
+
+Assim que todos jogadores finalizam suas jogadas e saem do jogo, o servidor do jogo finaliza o processo.
+
+![[Pasted image 20210411125741.png]]

@@ -15,7 +15,7 @@ public class Player extends UnicastRemoteObject implements IPlayer {
   // format: <ip>:<port>
   private String host;
   private int port;
-  private int numOfPlays = 15;
+  private int numOfPlays = 50;
   private boolean started;
   private boolean sentStop;
   private Queue<Result> resultList;
